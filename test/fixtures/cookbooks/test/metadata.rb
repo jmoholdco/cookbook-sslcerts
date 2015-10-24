@@ -1,0 +1,5 @@
+name 'test'
+license 'mit'
+description 'this is a test'
+version '0.1.1'
+depends 'sslcerts'

@@ -1,0 +1,10 @@
+---
+directories:
+  - libraries
+  - libraries/utils
+  - lib
+
+requires:
+  - lib/ruby-lint/definitions/gems/sslcerts_cookbook.rb
+  - ruby-lint/definitions/gems/chef.rb
+  - ruby-lint/definitions/gems/rspec.rb

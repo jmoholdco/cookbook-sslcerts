@@ -4,6 +4,21 @@ $LOAD_PATH.unshift(
 
 require 'eassl'
 
+module EaSSL
+  class Serial
+    def export
+      format('%04X', @next)
+    end
+
+    def save!
+      return export unless @path
+      File.open(@path, 'w') do |io|
+        io.write "#{export}\n"
+      end
+    end
+  end
+end
+
 module SSLCertsCookbook
   module Helpers
     def self.included(_)
@@ -28,21 +43,31 @@ module SSLCertsCookbook
     def ca_in_vault?
       return unless defined?(:new_resource)
       true if ca_vault_item(new_resource.ca_name)
-    rescue => e
-      Chef::Log.error('Error loading the CA from the vault')
-      Chef::Log.error("Your parameters were: vault => 'cacerts', \
-                      item: #{new_resource.ca_name}")
-      Chef::Log.error(e)
-      false
     end
 
     def ca_vault_item(ca_name)
-      chef_vault_item('cacerts', ca_name)
+      chef_vault_item(:cacerts, ca_name)
+    rescue => e
+      Chef::Log.error('Error loading the CA from the vault')
+      Chef::Log.error("Your parameters were: :cacerts, #{new_resource.ca_name}")
+      Chef::Log.info(e)
+      nil
     end
 
     def gen_rsa(bits, password = nil)
       fail InvalidKeyLengthError unless key_length_valid?(bits)
       EaSSL::Key.new(bits: bits, password: password)
+    end
+
+    def gen_certname(resource)
+      {
+        country: resource.country,
+        state: resource.state,
+        city: resource.city,
+        organization: resource.organization,
+        department: resource.organizational_unit,
+        common_name: resource.common_name
+      }
     end
 
     def encrypt_rsa_key(rsa_key, password)

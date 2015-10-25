@@ -1,15 +1,15 @@
 require 'chef/resource'
+require 'digest/sha2'
 
 class Chef
   class Resource
-    class CaCertificate < Chef::Resource # rubocop:disable Metrics/ClassLength
+    class SslCertificate < Chef::Resource # rubocop:disable Metrics/ClassLength
       def initialize(name, run_context = nil)
         super
-        @resource_name = :ca_certificate
+        @resource_name = :ssl_certificate
         @action = :create
         @allowed_actions.push :create
-        @allowed_actions.push :sync
-        @provider = Chef::Provider::CaCertificate
+        @provider = Chef::Provider::SslCertificate
       end
 
       def name(arg = nil)
@@ -17,27 +17,27 @@ class Chef
           :name,
           arg,
           kind_of: String,
-          regex: /[\w+.-]+/,
           name_attribute: true,
           required: true
         )
       end
 
-      def ca_path(arg = nil)
+      def ssl_dir(arg = nil)
         set_or_return(
-          :name,
+          :ssl_dir,
           arg,
           kind_of: String,
-          required: true
+          default: ssl_dir_for_platform
         )
       end
 
-      def key_password(arg = nil)
+      def type(arg = nil)
         set_or_return(
-          :key_password,
+          :type,
           arg,
           kind_of: String,
-          required: true
+          equal_to: %w(server client subordinate),
+          default: 'server'
         )
       end
 
@@ -46,8 +46,8 @@ class Chef
           :bits,
           arg,
           kind_of: Fixnum,
-          equal_to: [2048, 4096, 8192],
-          default: 8192
+          equal_to: [1024, 2048, 4096, 8192],
+          default: 2048
         )
       end
 
@@ -56,16 +56,16 @@ class Chef
           :days,
           arg,
           kind_of: Fixnum,
-          default: (365 * 10)
+          default: (365 * 5)
         )
       end
 
-      def ca_name(arg = nil)
+      def key_password(arg = nil)
         set_or_return(
-          :ca_name,
+          :key_password,
           arg,
-          kind_of: String,
-          default: lazy { name.gsub(/\s+/, '_').downcase }
+          kind_of: [String, NilClass],
+          default: nil
         )
       end
 
@@ -119,7 +119,7 @@ class Chef
           :common_name,
           arg,
           kind_of: String,
-          required: true
+          default: lazy { node['fqdn'] }
         )
       end
 
@@ -131,63 +131,53 @@ class Chef
         )
       end
 
-      def private_key_file(arg = nil)
-        set_or_return(
-          :private_key_file,
-          arg,
-          kind_of: String
-        )
+      def ssl_dir_for_platform
+        case node['platform_family']
+        when 'rhel', 'fedora' then '/etc/pki/tls'
+        else '/etc/ssl'
+        end
       end
 
-      def certificate_file(arg = nil)
-        set_or_return(
-          :private_key_file,
-          arg,
-          kind_of: String
-        )
+      def cert_id
+        Digest::SHA256.new.update(name).to_s
       end
 
-      def serial_file(arg = nil)
+      def request_filename(arg = nil)
         set_or_return(
-          :private_key_file,
-          arg,
-          kind_of: String
-        )
-      end
-
-      def authority_type(arg = nil)
-        set_or_return(
-          :authority_type,
+          :request_filename,
           arg,
           kind_of: String,
-          equal_to: %w(root intermediate),
-          default: 'root'
+          default: lazy { lazy_filename_for(:request) }
         )
       end
 
-      def save_in_vault?(arg = nil)
+      def private_key_filename(arg = nil)
         set_or_return(
-          :save_in_vault?,
+          :private_key_filename,
           arg,
-          kind_of: [TrueClass, FalseClass],
-          equal_to: [true, false],
-          default: true
+          kind_of: String,
+          default: lazy { lazy_filename_for(:private_key) }
         )
       end
 
-      def ca_cert_path
-        return "#{ca_path}/certs/cacert.pem" unless certificate_file
-        "#{ca_path}/certs/#{private_key_file}"
+      def certificate_filename(arg = nil)
+        set_or_return(
+          :certificate_filename,
+          arg,
+          kind_of: String,
+          default: lazy { lazy_filename_for(:certificate) }
+        )
       end
 
-      def private_key_path
-        return "#{ca_path}/private/cakey.pem" unless private_key_file
-        "#{ca_path}/private/#{private_key_file}"
-      end
+      private
 
-      def ca_serial_path
-        return "#{ca_path}/serial" unless serial_file
-        "#{ca_path}/#{serial_file}"
+      def lazy_filename_for(file_type)
+        filename = name == node['fqdn'] ? name : "#{name}-#{node['fqdn']}"
+        case file_type
+        when :request then "#{ssl_dir}/csr/#{filename}.pem"
+        when :private_key then "#{ssl_dir}/private/#{filename}.pem"
+        when :certificate then "#{ssl_dir}/certs/#{filename}.pem"
+        end
       end
     end
   end

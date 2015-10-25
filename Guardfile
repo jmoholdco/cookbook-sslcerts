@@ -11,6 +11,12 @@ guard :rspec, rspec_opts do
   watch(%r{^spec/(.+)/shared_examples\.rb$}) { 'spec' }
   watch(%r{^recipes/(.+)\.rb$}) { |m| "spec/unit/recipes/#{m[1]}_spec.rb" }
   watch(%r{^attributes/(.+)\.rb$}) { |m| "spec/unit/recipes/#{m[1]}_spec.rb" }
+  watch(%r{^libraries/(.+)_ca_certificate\.rb$}) do
+    'spec/unit/recipes/lwrp_certificate_authority_spec.rb'
+  end
+  watch(%r{^libraries/(.+)_ssl_certificate\.rb$}) do
+    'spec/unit/recipes/lwrp_certificate_spec.rb'
+  end
 end
 
 #  vim: set ts=8 sw=2 tw=0 ft=ruby et :

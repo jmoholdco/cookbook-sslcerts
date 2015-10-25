@@ -4,9 +4,5 @@
 #
 # Copyright (c) 2015 The Authors, All Rights Reserved.
 #
-
-sslcerts_certificate node['fqdn'] do
-  action :create
-  ssl_dir node['sslcerts']['dir']
-  request_subject node['sslcerts']['request']['subject']
-end
+include_recipe 'chef-vault'
+include_recipe 'chef-sugar'

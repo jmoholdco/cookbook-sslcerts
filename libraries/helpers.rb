@@ -1,4 +1,8 @@
-require_relative './utils'
+$LOAD_PATH.unshift(
+  *Dir[File.expand_path('../../files/default/vendor/gems/**/*.lib', __FILE__)]
+)
+
+require 'eassl'
 
 module SSLCertsCookbook
   module Helpers
@@ -16,9 +20,29 @@ module SSLCertsCookbook
       key.private?
     end
 
+    def ca_exists?
+      return unless defined?(:new_resource)
+      File.exist?(new_resource.ca_path)
+    end
+
+    def ca_in_vault?
+      return unless defined?(:new_resource)
+      true if ca_vault_item(new_resource.ca_name)
+    rescue => e
+      Chef::Log.error('Error loading the CA from the vault')
+      Chef::Log.error("Your parameters were: vault => 'cacerts', \
+                      item: #{new_resource.ca_name}")
+      Chef::Log.error(e)
+      false
+    end
+
+    def ca_vault_item(ca_name)
+      chef_vault_item('cacerts', ca_name)
+    end
+
     def gen_rsa(bits, password = nil)
       fail InvalidKeyLengthError unless key_length_valid?(bits)
-      SSLCertsCookbook::Utils::Key.new(bits: bits, password: password)
+      EaSSL::Key.new(bits: bits, password: password)
     end
 
     def encrypt_rsa_key(rsa_key, password)
@@ -30,7 +54,7 @@ module SSLCertsCookbook
     end
 
     def load_rsa_key(key_file, password = nil)
-      SSLCertsCookbook::Utils::Key.load(key_file, password)
+      EaSSL::Key.load(key_file, password)
     end
 
     def resource_key(options = {})
@@ -39,6 +63,10 @@ module SSLCertsCookbook
       else
         gen_rsa(options[:bits], options[:key_pass])
       end
+    end
+
+    def generate_self_signed
+      return unless defined?(:new_resource)
     end
 
     def resource_subject(new_resource)
@@ -54,7 +82,8 @@ module SSLCertsCookbook
     end
 
     def resource_csr(key, subject)
-      SSLCertsCookbook::Utils::SigningRequest.new(key: key, name: subject)
+      EaSSL::SigningRequest.new(key: key,
+                                name: EaSSL::CertificateName.new(subject))
     end
 
     def resource_cacert(ca_cert_path, options = {})

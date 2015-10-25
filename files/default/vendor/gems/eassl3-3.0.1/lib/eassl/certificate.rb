@@ -12,7 +12,9 @@ module EaSSL
         :signing_request  => nil,               #required
         :ca_certificate   => nil,               #required
         :comment          => "Ruby/OpenSSL/EaSSL Generated Certificate",
-        :type             => "server"
+        :type             => "server",
+        :subject_alt_name => nil, #optional e.g. [ "*.example.com", "example.com" ]
+        :override_req     => true
       }.update(options)
     end
 
@@ -30,30 +32,50 @@ module EaSSL
         ef = OpenSSL::X509::ExtensionFactory.new
         ef.subject_certificate = @ssl
         ef.issuer_certificate = @options[:ca_certificate]? @options[:ca_certificate].ssl : @ssl
-        @ssl.extensions = [
-          ef.create_extension("basicConstraints","CA:FALSE"),
-          ef.create_extension("subjectKeyIdentifier", "hash"),
-
-          ef.create_extension("nsComment", @options[:comment]),
-        ]
-        # this extension must be added separately, after the others.
-        # presumably needs subjectKeyIdentifier to already be in place
+        @ssl.extensions = [ ef.create_extension("subjectKeyIdentifier", "hash") ]
         @ssl.add_extension(ef.create_extension("authorityKeyIdentifier", "keyid:always,issuer:always"))
+        
+        extensions = Array.new
+        
+        extensions << ef.create_extension("basicConstraints","CA:FALSE")
+        extensions << ef.create_extension("nsComment", @options[:comment])
 
-        if @options[:type] == 'server'
-          @ssl.add_extension(ef.create_extension("keyUsage", "digitalSignature,keyEncipherment"))
-          @ssl.add_extension(ef.create_extension("extendedKeyUsage", "serverAuth"))
+        case @options[:type]
+        when 'server'
+          extensions << ef.create_extension("keyUsage", "digitalSignature,keyEncipherment")
+          extensions << ef.create_extension("extendedKeyUsage", "serverAuth")
+        when 'client'
+          extensions << ef.create_extension("keyUsage", "nonRepudiation,digitalSignature,keyEncipherment")
+          extensions << ef.create_extension("extendedKeyUsage", "clientAuth,emailProtection")
         end
-        if @options[:type] == 'client'
-          @ssl.add_extension(ef.create_extension("keyUsage", "nonRepudiation,digitalSignature,keyEncipherment"))
-          @ssl.add_extension(ef.create_extension("extendedKeyUsage", "clientAuth,emailProtection"))
+
+        #add subject alternate names
+        if @options[:subject_alt_name]
+          subjectAltName = @options[:subject_alt_name].map { |d| "DNS: #{d}" }.join(',')
+          extensions << ef.create_extension("subjectAltName", subjectAltName)
         end
+
+        if sr = @options[:signing_request]
+          sr.extensions.each do |ext|
+            if @options[:override_req] # CA extensions take precedence in merge, default behavior
+              extensions << ext unless extensions.any? { |e| e.oid == ext.oid }
+            else # Req extensions take precedence in merge
+              extensions.delete_if { |e| e.oid == ext.oid }
+              extensions << ext
+            end
+          end
+        end
+
+        extensions.each do |ext|
+          @ssl.add_extension(ext)
+        end
+
       end
       @ssl
     end
 
-    def sign(ca_key)
-      ssl.sign(ca_key.private_key, OpenSSL::Digest::SHA1.new)
+    def sign(ca_key, digest=OpenSSL::Digest::SHA1.new)
+      ssl.sign(ca_key.private_key, digest)
     end
 
     def to_pem

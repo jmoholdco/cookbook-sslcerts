@@ -7,3 +7,4 @@ long_description 'Installs/Configures ssl_certs'
 version '0.3.4'
 
 depends 'chef-vault', '~> 1.3.1'
+depends 'chef-sugar', '~> 3.1'

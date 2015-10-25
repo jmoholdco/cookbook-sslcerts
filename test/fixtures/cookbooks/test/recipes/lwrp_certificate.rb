@@ -1,17 +1,9 @@
-include_recipe 'chef-vault'
+include_recipe 'sslcerts'
 
-ssl_directory = value_for_platform_family(
-  'debian' => '/etc/ssl',
-  'rhel' => '/etc/pki/tls'
-)
-
-sslcerts_certificate node['fqdn'] do
+ssl_certificate node['fqdn'] do
   action :create
-  ssl_dir ssl_directory
-  request_subject(
-    country: 'US',
-    state: 'Colorado',
-    organization: 'Default Org',
-    common_name: node['fqdn']
-  )
+  organization 'TestingOrg'
+  country 'US'
+  state 'Colorado'
+  city 'Denver'
 end

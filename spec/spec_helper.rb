@@ -5,6 +5,6 @@ require_relative 'unit/recipes/shared_examples'
 
 RSpec.configure do |config|
   config.include ChefVault::TestFixtures.rspec_shared_context(true)
-  config.platform = 'centos'
-  config.version = '7.1.1503'
+  config.fail_fast = true
+  config.log_level = :debug
 end

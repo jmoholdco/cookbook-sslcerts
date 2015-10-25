@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 RSpec.describe 'test::lwrp_certificate_authority' do
-  include ChefVault::TestFixtures.rspec_shared_context
+  include ChefVault::TestFixtures.rspec_shared_context(true)
   let(:chef_run) do
     ChefSpec::SoloRunner.new(opts) do |node|
       node.automatic['fqdn'] = 'localhost.localdomain'
@@ -9,7 +9,11 @@ RSpec.describe 'test::lwrp_certificate_authority' do
     end.converge(described_recipe)
   end
 
-  let(:opts) { { step_into: ['sslcerts_certificate_authority'] } }
+  before do
+    allow(Chef::DataBagItem).to receive(:load).with(:cacerts, 'TestCA')
+  end
+
+  let(:opts) { { step_into: ['ca_certificate'] } }
 
   it 'converges successfully' do
     expect { chef_run }.to_not raise_error

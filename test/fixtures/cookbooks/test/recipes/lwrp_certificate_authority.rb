@@ -1,5 +1,3 @@
-include_recipe 'chef-vault'
-
 file 'any potential existing certificate' do
   action :delete
   path '/etc/ssl_test/ca/certs/cacert.pem'
@@ -15,6 +13,14 @@ file 'any potential existing serial file' do
   path '/etc/ssl_test/ca/serial'
 end
 
-sslcerts_certificate_authority 'Test CA' do
-  action :sync
+ca_certificate 'Test CA' do
+  action :create
+  ca_path '/etc/ssl_test/ca'
+  key_password 'abcdefg123456'
+  ca_name 'TestCA'
+  organization 'TestingOrg'
+  organizational_unit 'CertificateAuthority'
+  city 'Denver'
+  state 'Colorado'
+  common_name node['fqdn']
 end

@@ -1,8 +1,11 @@
 {
-  "localhost.localdomain": {
+  "151b43d38accf64fa2ed75d267cce8c75cfc07ae86064c4ca6e33354e2a9d99a": {
     "id":"151b43d38accf64fa2ed75d267cce8c75cfc07ae86064c4ca6e33354e2a9d99a",
     "csr":"-----BEGIN CERTIFICATE REQUEST-----\nMIIC6TCCAdECAQIwgaMxCzAJBgNVBAYTAlVTMREwDwYDVQQIEwhDb2xvcmFkbzEP\nMA0GA1UEBxMGRGVudmVyMRcwFQYDVQQKEw5JbnRlcm5ldCwgSW5jLjEYMBYGA1UE\nCxMPQnJhbmQgQXdhcmVuZXNzMR4wHAYDVQQDExVsb2NhbGhvc3QubG9jYWxkb21h\naW4xHTAbBgkqhkiG9w0BCQETDnJvb3RAbG9jYWxob3N0MIIBIjANBgkqhkiG9w0B\nAQEFAAOCAQ8AMIIBCgKCAQEApzxXWywtuaB1swyH+pPHI1QyzN2srTZedAUN6ysM\n5uSbH5pYgLJs7A7qtyQ/4o2xVUOqdujW9UyJ5s4MYZTyi+TUNI9+PWfX8N38+lPa\nK1/o17wW5sWPDvb7fEbK5v6HisJVZXJaYjzwRZ/yTM6Q1e2bE2avI+ycmOZ+6rSs\npnzDMJ4cQKnlkEqGf9N+rMz7klDrUneh5z8vQNKuEFhm++xOAy3v+R5Ohdcwc2yd\nsNxoAqG2tYKN+D6kdDPJipYrp+vjxF/HbvFyGcXaDpch3Fy/eLfNpCpBM015gn/H\nYcKv5dCcyOwlAbDbJgLnR74HnDupXHxQBER5uFrxztgvPQIDAQABoAAwDQYJKoZI\nhvcNAQELBQADggEBAECN9M3SSwE2/J3ftv40VqH44ChaZNd/SB2o5v0ufjRDb8WK\ncIK6Z4Oqf4c5EKVX/CmleKk5yXD+nsjcvZIqMCsAtANAL9Umx/ORViphSMWDSjHY\nC7eAjaBxo4BSh6GW4Y3g6DaTGjOJzBInp0ObKerkVVl7kX0Fo6Dk+SlNYP8SMkyJ\n8KIW3OmMPgoYodYDkaOtPc+R27CJBUGJPJyTcwB8C3i4z21AeVOzdHzg7zNddDkL\nUyvg50uJ5gD9zH2QIqdyifbuyStsiH3bSMMNxMtCy0QgiTT856Jk332dUrT/wQlY\nZnU2VbnfHwev5gtZEHK57tS1BbtHPO2Z0ZpV4aY=\n-----END CERTIFICATE REQUEST-----\n",
     "date":"2015-10-17 01:57:16 -0600",
-    "type":"server"
+    "type":"server",
+    "days": 1825,
+    "signed": false,
+    "hostname": "localhost.localdomain"
   }
 }

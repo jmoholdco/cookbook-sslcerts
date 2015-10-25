@@ -16,11 +16,14 @@ platforms:
       - recipe[apt]
   - name: centos-6.5
   - name: centos-7.1
+  - name: debian-81
+    run_list:
+      - recipe[apt]
 
 suites:
   - name: lwrp_certificate
     run_list:
       - recipe[test::lwrp_certificate]
-  - name: lwrp_rsa_key
+  - name: lwrp_certificate_authority
     run_list:
-      - recipe[test::lwrp_rsa_key]
+      - recipe[test::lwrp_certificate_authority]

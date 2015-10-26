@@ -166,7 +166,7 @@ module SSLCertsCookbook
       end
 
       def add_request_to_outbox(outbox)
-        node.set['csr_outbox'][new_resource.cert_id] =
+        node.set['csr_outbox'][current_resource.cert_id] =
           generate_outbox_hash(outbox)
       end
 
@@ -178,7 +178,7 @@ module SSLCertsCookbook
 
       def generate_outbox_hash(request)
         {
-          id: new_resource.cert_id,
+          id: current_resource.cert_id,
           csr: request.to_pem,
           date: Time.now.to_s,
           type: new_resource.type,

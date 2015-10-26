@@ -212,7 +212,7 @@ module SSLCertsCookbook
 
       def outbox_match?
         node.attribute?('csr_outbox') &&
-          node['csr_outbox'][current_resource.cert_id] == request_outbox
+          node['csr_outbox'][current_resource.cert_id] == request_outbox.to_h
       end
 
       def load_certbag
@@ -258,7 +258,7 @@ module SSLCertsCookbook
       def load_request_from_components
         OpenStruct.new.tap do |req|
           req.key = EaSSL::Key.load(current_resource.private_key_filename)
-          req.csr = EaSSL::SigningRequest.load(current_resource.request_filename)
+          req.csr = EaSSL::SigningRequest.load current_resource.request_filename
         end
       end
     end

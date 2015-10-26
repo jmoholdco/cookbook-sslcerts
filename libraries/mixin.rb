@@ -211,7 +211,8 @@ module SSLCertsCookbook
       end
 
       def outbox_match?
-        node['csr_outbox'][current_resource.cert_id] == request_outbox
+        node.attribute?('csr_outbox') &&
+          node['csr_outbox'][current_resource.cert_id] == request_outbox
       end
 
       def load_certbag

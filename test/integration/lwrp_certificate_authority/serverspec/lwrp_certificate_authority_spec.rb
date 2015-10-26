@@ -1,11 +1,7 @@
 require 'spec_helper'
 
 RSpec.describe 'test::lwrp_certificate_authority' do
-  if os[:family] == 'redhat'
-    ca_dir = '/etc/pki/CA'
-  else
-    ca_dir = '/etc/ssl/CA'
-  end
+  ca_dir = '/etc/ssl_test/ca'
 
   describe file(ca_dir) do
     it { is_expected.to exist }

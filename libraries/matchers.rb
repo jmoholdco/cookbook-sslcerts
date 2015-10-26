@@ -1,9 +1,9 @@
 if defined?(ChefSpec)
-  def create_x509_certificate(name)
-    ChefSpec::Matchers::ResourceMatcher.new(:sslcerts_x509, :create, name)
+  def create_ssl_certificate(name)
+    ChefSpec::Matchers::ResourceMatcher.new(:ssl_certificate, :create, name)
   end
 
-  def create_rsa_key(name)
-    ChefSpec::Matchers::ResourceMatcher.new(:sslcerts_rsa_key, :create, name)
+  def create_ca_certificate(name)
+    ChefSpec::Matchers::ResourceMatcher.new(:ca_certificate, :create, name)
   end
 end

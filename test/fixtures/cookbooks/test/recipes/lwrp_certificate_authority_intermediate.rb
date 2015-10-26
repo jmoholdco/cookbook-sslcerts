@@ -25,4 +25,5 @@ ca_certificate 'Test CA' do
   city 'Denver'
   state 'Colorado'
   common_name node['fqdn']
+  authority_type 'intermediate'
 end

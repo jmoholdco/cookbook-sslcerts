@@ -8,7 +8,7 @@ RSpec.describe 'test::lwrp_certificate' do
       it { is_expected.to be_mode 400 }
     end
 
-    describe file('/etc/pki/tls/csr/localhost.localdomain.csr') do
+    describe file('/etc/pki/tls/csr/localhost.localdomain.pem') do
       it { is_expected.to exist }
       it { is_expected.to be_file }
       it { is_expected.to be_mode 644 }
@@ -26,7 +26,7 @@ RSpec.describe 'test::lwrp_certificate' do
       it { is_expected.to be_mode 400 }
     end
 
-    describe file('/etc/ssl/csr/localhost.csr') do
+    describe file('/etc/ssl/csr/localhost.pem') do
       it { is_expected.to exist }
       it { is_expected.to be_file }
       it { is_expected.to be_mode 644 }

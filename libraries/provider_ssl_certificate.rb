@@ -96,7 +96,8 @@ class Chef
       def generated_csr
         @csr ||= EaSSL::SigningRequest.new(
           key: generated_private_key,
-          name: EaSSL::CertificateName.new(gen_certname(new_resource))
+          name: EaSSL::CertificateName.new(gen_certname(new_resource)),
+          type: new_resource.type
         )
       end
 

@@ -10,11 +10,19 @@ class Chef
       include SSLCertsCookbook::Mixin::Provider
       include Chef::DSL::Recipe
 
-      def load_current_resource
+      def load_current_resource # rubocop:disable Metrics/AbcSize,MethodLength
         @current_resource ||= Chef::Resource::CaCertificate.new(
           @new_resource.name
         )
-        super
+        shared_current_resource_loading
+        current_resource.serial_filename lazy_filename_for(:serial)
+        if new_resource.ca_path
+          current_resource.ca_path(new_resource.ca_path)
+        elsif current_resource.ssl_dir
+          current_resource.ca_path("#{current_resource.ssl_dir}/CA")
+        else
+          current_resource.ca_path('/etc/ssl/ca')
+        end
         @on_disk = true if ca_exists?
         @in_vault = true if ca_in_vault?
         @current_resource
@@ -26,7 +34,7 @@ class Chef
         key = generated_ca.key
         serial = generated_ca.serial
 
-        file new_resource.private_key_path do
+        file current_resource.private_key_filename do
           owner 'root'
           group node['root_group']
           mode '0400'
@@ -37,7 +45,7 @@ class Chef
         write_certificate_to_disk
         handle_csr
 
-        file new_resource.ca_serial_path do
+        file current_resource.serial_filename do
           owner 'root'
           group node['root_group']
           mode '0644'
@@ -50,7 +58,7 @@ class Chef
 
       def write_certificate_to_disk
         return unless (cert = generated_ca.certificate)
-        file new_resource.ca_cert_path do
+        file current_resource.ca_cert_path do
           owner 'root'
           group node['root_group']
           mode '0644'
@@ -63,7 +71,7 @@ class Chef
         return unless generated_ca.is_a?(OpenStruct)
         if request_signed?
           certbag = load_certbag
-          file new_resource.ca_cert_path do
+          file current_resource.ca_cert_path do
             owner 'root'
             group node['root_group']
             mode '0644'
@@ -73,7 +81,7 @@ class Chef
           node.set['csr_outbox'].delete(new_resource.cert_id)
         else
           csr_content = generated_ca.csr
-          file new_resource.ca_csr_path do
+          file current_resource.ca_csr_path do
             owner 'root'
             group node['root_group']
             mode '0644'
@@ -101,7 +109,8 @@ class Chef
       end
 
       def generated_serial
-        @gser ||= EaSSL::Serial.new(next: 1, path: new_resource.ca_serial_path)
+        @gser ||= EaSSL::Serial.new(next: 1,
+                                    path: current_resource.ca_serial_path)
       end
 
       def generated_ca
@@ -117,14 +126,14 @@ class Chef
       end
 
       def create_directory_structure
-        directory new_resource.ca_path do
+        directory current_resource.ca_path do
           recursive true
         end
 
         %W(
-          #{new_resource.ca_path}/private
-          #{new_resource.ca_path}/certs
-          #{new_resource.ca_path}/csr
+          #{current_resource.ca_path}/private
+          #{current_resource.ca_path}/certs
+          #{current_resource.ca_path}/csr
         ).each do |dir|
           directory dir do
             recursive true
@@ -152,11 +161,11 @@ class Chef
 
       def lazy_filename_for(file_type)
         case file_type
-        when :request then "#{ca_path}/csr/ca_csr.pem"
-        when :private_key then "#{ca_path}/private/cakey.pem"
-        when :certificate then "#{ca_path}/certs/cacert.pem"
-        when :serial then "#{ca_path}/serial"
-        when :cert_id then name
+        when :request then "#{new_resource.ca_path}/csr/ca_csr.pem"
+        when :private_key then "#{new_resource.ca_path}/private/cakey.pem"
+        when :certificate then "#{new_resource.ca_path}/certs/cacert.pem"
+        when :serial then "#{new_resource.ca_path}/serial"
+        when :cert_id then new_resource.name
         end
       end
     end

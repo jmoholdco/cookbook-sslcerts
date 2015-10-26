@@ -153,6 +153,14 @@ module SSLCertsCookbook
         end
       end
 
+      def shared_current_resource_loading # rubocop:disable Metrics/AbcSize
+        current_resource.private_key_filename lazy_filename_for(:private_key)
+        current_resource.request_filename lazy_filename_for(:request)
+        current_resource.certificate_filename lazy_filename_for(:certificate)
+        current_resource.cert_id create_cert_id(lazy_filename_for(:cert_id))
+        current_resource.ssl_dir(new_resource.ssl_dir || ssl_dir_for_platform)
+      end
+
       def create_cert_id(cert_id)
         Digest::SHA256.new.update(cert_id).to_s
       end
@@ -177,24 +185,25 @@ module SSLCertsCookbook
           days: new_resource.days,
           signed: false,
           hostname: node['fqdn'],
-          certificate_name: new_resource.name
+          certificate_name: lazy_filename_for(:cert_id)
         }
       end
 
       def generated_private_key
-        @private_key ||= if ::File.exist?(new_resource.private_key_filename)
+        @private_key ||= if ::File.exist?(current_resource.private_key_filename)
                            load_rsa_key(
-                             new_resource.private_key_filename,
-                             new_resource.key_password
+                             current_resource.private_key_filename,
+                             current_resource.key_password
                            )
                          else
-                           gen_rsa(new_resource.bits, new_resource.key_password)
+                           gen_rsa(current_resource.bits,
+                                   current_resource.key_password)
                          end
       end
 
       def request_generated?
         node.attribute?('csr_outbox') &&
-          node['csr_outbox'][new_resource.cert_id]
+          node['csr_outbox'][current_resource.cert_id]
       end
 
       def request_signed?
@@ -206,7 +215,7 @@ module SSLCertsCookbook
       end
 
       def load_certbag
-        data_bag_item('certificates', new_resource.cert_id)
+        data_bag_item('certificates', current_resource.cert_id)
       rescue => e
         Chef::Log.error('Couldnt find the certificate in the data bag.')
         Chef::Log.error("New resource cert_id: #{new_resource.cert_id}")
@@ -223,7 +232,7 @@ module SSLCertsCookbook
         value_for_platform_family(
           'rhel' => '/etc/pki/tls',
           'fedora' => '/etc/pki/tls',
-          'default' => '/etc/pki/tls'
+          'default' => '/etc/ssl'
         )
       end
     end

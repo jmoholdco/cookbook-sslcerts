@@ -29,8 +29,7 @@ class Chef
         set_or_return(
           :ca_path,
           arg,
-          kind_of: String,
-          default: lazy { "#{ssl_dir}/CA" }
+          kind_of: String
         )
       end
 

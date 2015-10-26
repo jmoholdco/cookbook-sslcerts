@@ -2,7 +2,9 @@ require 'chef/resource'
 
 class Chef
   class Resource
-    class CaCertificate < Chef::Resource # rubocop:disable Metrics/ClassLength
+    class CaCertificate < Chef::Resource
+      include SSLCertsCookbook::Mixin::Resource
+
       def initialize(name, run_context = nil)
         super
         @resource_name = :ca_certificate
@@ -32,34 +34,6 @@ class Chef
         )
       end
 
-      def key_password(arg = nil)
-        set_or_return(
-          :key_password,
-          arg,
-          kind_of: String,
-          required: true
-        )
-      end
-
-      def bits(arg = nil)
-        set_or_return(
-          :bits,
-          arg,
-          kind_of: Fixnum,
-          equal_to: [2048, 4096, 8192],
-          default: 8192
-        )
-      end
-
-      def days(arg = nil)
-        set_or_return(
-          :days,
-          arg,
-          kind_of: Fixnum,
-          default: (365 * 10)
-        )
-      end
-
       def ca_name(arg = nil)
         set_or_return(
           :ca_name,
@@ -69,59 +43,7 @@ class Chef
         )
       end
 
-      def organization(arg = nil)
-        set_or_return(
-          :organization,
-          arg,
-          kind_of: String,
-          required: true
-        )
-      end
-
-      def organizational_unit(arg = nil)
-        set_or_return(
-          :organizational_unit,
-          arg,
-          kind_of: String
-        )
-      end
-
-      def country(arg = nil)
-        set_or_return(
-          :country,
-          arg,
-          kind_of: String,
-          regex: /^[A-Z]{2}$/,
-          default: 'US'
-        )
-      end
-
-      def state(arg = nil)
-        set_or_return(
-          :state,
-          arg,
-          kind_of: String
-        )
-      end
-
       alias_method :province, :state
-
-      def city(arg = nil)
-        set_or_return(
-          :city,
-          arg,
-          kind_of: String
-        )
-      end
-
-      def common_name(arg = nil)
-        set_or_return(
-          :common_name,
-          arg,
-          kind_of: String,
-          required: true
-        )
-      end
 
       def subject_alt_names(arg = nil)
         set_or_return(
@@ -131,7 +53,7 @@ class Chef
         )
       end
 
-      def private_key_file(arg = nil)
+      def private_key_filename(arg = nil)
         set_or_return(
           :private_key_file,
           arg,
@@ -139,7 +61,7 @@ class Chef
         )
       end
 
-      def certificate_file(arg = nil)
+      def certificate_filename(arg = nil)
         set_or_return(
           :private_key_file,
           arg,
@@ -147,7 +69,7 @@ class Chef
         )
       end
 
-      def serial_file(arg = nil)
+      def serial_filename(arg = nil)
         set_or_return(
           :private_key_file,
           arg,
@@ -176,18 +98,30 @@ class Chef
       end
 
       def ca_cert_path
-        return "#{ca_path}/certs/cacert.pem" unless certificate_file
-        "#{ca_path}/certs/#{private_key_file}"
+        return "#{ca_path}/certs/cacert.pem" unless certificate_filename
+        "#{ca_path}/certs/#{certificate_filename}"
       end
 
       def private_key_path
-        return "#{ca_path}/private/cakey.pem" unless private_key_file
-        "#{ca_path}/private/#{private_key_file}"
+        return "#{ca_path}/private/cakey.pem" unless private_key_filename
+        "#{ca_path}/private/#{private_key_filename}"
       end
 
       def ca_serial_path
-        return "#{ca_path}/serial" unless serial_file
-        "#{ca_path}/#{serial_file}"
+        return "#{ca_path}/serial" unless serial_filename
+        "#{ca_path}/#{serial_filename}"
+      end
+
+      def ca_csr_path
+        "#{ca_path}/csr/ca_csr.pem"
+      end
+
+      alias_method :type, :authority_type
+
+      private
+
+      def default_common_name
+        name
       end
     end
   end

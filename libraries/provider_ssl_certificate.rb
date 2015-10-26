@@ -1,16 +1,11 @@
 require 'chef/mixin/shell_out'
 require 'chef/dsl/recipe'
 require 'chef/dsl/data_query'
-require 'chef/sugar'
 
 class Chef
   class Provider
     class SslCertificate < Chef::Provider
-      include Chef::DSL::Recipe
-      include Chef::Mixin::ShellOut
-      include SSLCertsCookbook::Helpers
-      include Chef::DSL::DataQuery
-      include Chef::Sugar::DSL
+      include SSLCertsCookbook::Mixin::Provider
       include Chef::DSL::Recipe
 
       def load_current_resource
@@ -78,29 +73,6 @@ class Chef
         node.set['csr_outbox'].delete(new_resource.cert_id)
       end
 
-      def add_request_to_outbox
-        node.set['csr_outbox'][new_resource.cert_id] = {
-          id: new_resource.cert_id,
-          csr: generated_csr.to_pem,
-          date: Time.now.to_s,
-          type: new_resource.type,
-          days: new_resource.days,
-          signed: false,
-          hostname: node['fqdn']
-        }
-      end
-
-      def generated_private_key
-        @private_key ||= if ::File.exist?(new_resource.private_key_filename)
-                           load_rsa_key(
-                             new_resource.private_key_filename,
-                             new_resource.key_password
-                           )
-                         else
-                           gen_rsa(new_resource.bits, new_resource.key_password)
-                         end
-      end
-
       def generated_csr
         @csr ||= EaSSL::SigningRequest.new(
           key: generated_private_key,
@@ -110,23 +82,6 @@ class Chef
 
       def certificate_exists?
         ::File.exist?(new_resource.certificate_filename)
-      end
-
-      def request_generated?
-        node.attribute?('csr_outbox') && node['csr_outbox'][new_resource.cert_id]
-      end
-
-      def request_signed?
-        request_generated? && load_certbag
-      end
-
-      def load_certbag
-        data_bag_item('certificates', new_resource.cert_id)
-      rescue => e
-        Chef::Log.error('Couldnt find the certificate in the data bag.')
-        Chef::Log.error("New resource cert_id: #{new_resource.cert_id}")
-        Chef::Log.error(e.message)
-        Chef::Log.info(e)
       end
     end
   end

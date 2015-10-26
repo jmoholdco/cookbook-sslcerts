@@ -1,5 +1,5 @@
 $LOAD_PATH.unshift(
-  *Dir[File.expand_path('../../files/default/vendor/gems/**/*.lib', __FILE__)]
+  *Dir[File.expand_path('../../files/default/vendor/gems/**/lib', __FILE__)]
 )
 
 require 'eassl'
@@ -21,7 +21,7 @@ end
 
 module SSLCertsCookbook
   module Helpers
-    def self.included(_)
+    def self.included(_base)
       require 'openssl' unless defined?(OpenSSL)
     end
 

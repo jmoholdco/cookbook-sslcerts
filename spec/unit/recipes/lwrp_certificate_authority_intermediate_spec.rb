@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-RSpec.describe 'test::lwrp_certificate_authority' do
+RSpec.describe 'test::lwrp_certificate_authority_intermediate' do
   include ChefVault::TestFixtures.rspec_shared_context(true)
   let(:chef_run) do
     ChefSpec::SoloRunner.new(opts) do |node|
@@ -11,10 +11,6 @@ RSpec.describe 'test::lwrp_certificate_authority' do
 
   before do
     allow(Chef::DataBagItem).to receive(:load).with(:cacerts, 'TestCA')
-    stub_data_bag_item(
-      'certificates',
-      '8f55a891ccb28cdad65c71f8c7e4a5d0127a4aa96597a72e8421ae57d649ba4b'
-    ).and_return(nil)
   end
 
   let(:opts) { { step_into: ['ca_certificate'] } }
@@ -34,8 +30,8 @@ RSpec.describe 'test::lwrp_certificate_authority' do
       expect(chef_run).to create_file('/etc/ssl_test/ca/private/cakey.pem')
     end
 
-    it 'creates the cert file' do
-      expect(chef_run).to create_file('/etc/ssl_test/ca/certs/cacert.pem')
+    it 'creates the csr file' do
+      expect(chef_run).to create_file('/etc/ssl_test/ca/csr/ca_csr.pem')
     end
 
     it 'creates the serial file' do

@@ -1,8 +1,21 @@
+require 'chef/dsl/platform_introspection'
+
 module SSLCertsCookbook
   module Mixin
     module Resource # rubocop:disable Metrics/ModuleLength
-      def cert_id
-        Digest::SHA256.new.update(name).to_s
+      def self.included(base)
+        base.class_eval do
+          alias_method :province, :state
+        end
+      end
+
+      def cert_id(arg = nil)
+        set_or_return(
+          :cert_id,
+          arg,
+          kind_of: String,
+          regex: /[a-f0-9]{64}/
+        )
       end
 
       def bits(arg = nil)
@@ -39,6 +52,14 @@ module SSLCertsCookbook
           arg,
           kind_of: String,
           required: true
+        )
+      end
+
+      def ssl_dir(arg = nil)
+        set_or_return(
+          :ssl_dir,
+          arg,
+          kind_of: String
         )
       end
 
@@ -97,8 +118,7 @@ module SSLCertsCookbook
         set_or_return(
           :request_filename,
           arg,
-          kind_of: String,
-          default: lazy { lazy_filename_for(:request) }
+          kind_of: String
         )
       end
 
@@ -106,8 +126,7 @@ module SSLCertsCookbook
         set_or_return(
           :private_key_filename,
           arg,
-          kind_of: String,
-          default: lazy { lazy_filename_for(:private_key) }
+          kind_of: String
         )
       end
 
@@ -115,40 +134,50 @@ module SSLCertsCookbook
         set_or_return(
           :certificate_filename,
           arg,
-          kind_of: String,
-          default: lazy { lazy_filename_for(:certificate) }
+          kind_of: String
         )
-      end
-
-      private
-
-      def lazy_filename_for(file_type)
-        filename = name == node['fqdn'] ? name : "#{name}-#{node['fqdn']}"
-        case file_type
-        when :request then "#{ssl_dir}/csr/#{filename}.pem"
-        when :private_key then "#{ssl_dir}/private/#{filename}.pem"
-        when :certificate then "#{ssl_dir}/certs/#{filename}.pem"
-        end
       end
     end
 
     module Provider
+      include Chef::DSL::Recipe
+      include Chef::Mixin::ShellOut
+      include SSLCertsCookbook::Helpers
+      include Chef::DSL::DataQuery
+      include Chef::DSL::PlatformIntrospection
+
       def self.included(base)
-        base.send :include, Chef::DSL::Recipe
-        base.send :include, Chef::Mixin::ShellOut
-        base.send :include, SSLCertsCookbook::Helpers
-        base.send :include, Chef::DSL::DataQuery
+        base.class_eval do
+          attr_accessor :request_outbox
+          attr_reader :private_key
+        end
       end
 
-      def add_request_to_outbox # rubocop:disable Metrics/AbcSize
-        node.set['csr_outbox'][new_resource.cert_id] = {
+      def create_cert_id(cert_id)
+        Digest::SHA256.new.update(cert_id).to_s
+      end
+
+      def add_request_to_outbox(outbox)
+        node.set['csr_outbox'][new_resource.cert_id] =
+          generate_outbox_hash(outbox)
+      end
+
+      def request_outbox
+        @request_outbox ||= OpenStruct.new(
+          generate_outbox_hash(generated_csr)
+        )
+      end
+
+      def generate_outbox_hash(request)
+        {
           id: new_resource.cert_id,
-          csr: generated_csr.to_pem,
+          csr: request.to_pem,
           date: Time.now.to_s,
           type: new_resource.type,
           days: new_resource.days,
           signed: false,
-          hostname: node['fqdn']
+          hostname: node['fqdn'],
+          certificate_name: new_resource.name
         }
       end
 
@@ -172,6 +201,10 @@ module SSLCertsCookbook
         request_generated? && load_certbag
       end
 
+      def outbox_match?
+        node['csr_outbox'][new_resource.cert_id] == request_outbox
+      end
+
       def load_certbag
         data_bag_item('certificates', new_resource.cert_id)
       rescue => e
@@ -180,6 +213,43 @@ module SSLCertsCookbook
         Chef::Log.error(e.message)
         Chef::Log.info(e)
         nil
+      end
+
+      def csr_cache_path
+        File.join(Chef::Config[:file_cache_path], 'csr_outbox')
+      end
+
+      def ssl_dir_for_platform
+        value_for_platform_family(
+          'rhel' => '/etc/pki/tls',
+          'fedora' => '/etc/pki/tls',
+          'default' => '/etc/pki/tls'
+        )
+      end
+    end
+
+    module Serialization
+      def self.included(_base)
+        require 'yaml' unless defined?(YAML)
+      end
+
+      def serialize_request_outbox
+        return unless request_outbox
+        ::File.open("#{csr_cache_path}/#{new_resource.name}", 'w') do |io|
+          io.write request_outbox.to_yaml
+        end
+      end
+
+      def load_serialized_request_outbox
+        @request_outbox =
+          YAML.load_file("#{csr_cache_path}/#{new_resource.name}")
+      end
+
+      def load_request_from_components
+        OpenStruct.new.tap do |req|
+          req.key = EaSSL::Key.load(new_resource.private_key_filename)
+          req.csr = EaSSL::SigningRequest.load(new_resource.request_filename)
+        end
       end
     end
   end

@@ -14,6 +14,7 @@ class Chef
         @current_resource ||= Chef::Resource::CaCertificate.new(
           @new_resource.name
         )
+        super
         @on_disk = true if ca_exists?
         @in_vault = true if ca_in_vault?
         @current_resource
@@ -71,15 +72,15 @@ class Chef
           end
           node.set['csr_outbox'].delete(new_resource.cert_id)
         else
-          csr_content = generated_ca.csr.to_pem
+          csr_content = generated_ca.csr
           file new_resource.ca_csr_path do
             owner 'root'
             group node['root_group']
             mode '0644'
             sensitive true
-            content csr_content
+            content csr_content.to_pem
           end
-          add_request_to_outbox
+          add_request_to_outbox(csr_content)
         end
       end
 
@@ -146,6 +147,16 @@ class Chef
           t.csr = EaSSL::SigningRequest.new(name: t.name, key: t.key)
           t.serial = generated_serial
           t.certificate = nil
+        end
+      end
+
+      def lazy_filename_for(file_type)
+        case file_type
+        when :request then "#{ca_path}/csr/ca_csr.pem"
+        when :private_key then "#{ca_path}/private/cakey.pem"
+        when :certificate then "#{ca_path}/certs/cacert.pem"
+        when :serial then "#{ca_path}/serial"
+        when :cert_id then name
         end
       end
     end

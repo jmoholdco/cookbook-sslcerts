@@ -5,6 +5,8 @@ class Chef
   class Resource
     class SslCertificate < Chef::Resource
       include SSLCertsCookbook::Mixin::Resource
+      state_attrs :cert_id
+      attr_writer :cert_id
 
       def initialize(name, run_context = nil)
         super
@@ -24,15 +26,6 @@ class Chef
         )
       end
 
-      def ssl_dir(arg = nil)
-        set_or_return(
-          :ssl_dir,
-          arg,
-          kind_of: String,
-          default: ssl_dir_for_platform
-        )
-      end
-
       def type(arg = nil)
         set_or_return(
           :type,
@@ -41,14 +34,6 @@ class Chef
           equal_to: %w(server client subordinate),
           default: 'server'
         )
-      end
-      alias_method :province, :state
-
-      def ssl_dir_for_platform
-        case node['platform_family']
-        when 'rhel', 'fedora' then '/etc/pki/tls'
-        else '/etc/ssl'
-        end
       end
 
       def default_common_name

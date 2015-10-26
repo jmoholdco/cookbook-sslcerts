@@ -27,10 +27,10 @@ class Chef
 
       def ca_path(arg = nil)
         set_or_return(
-          :name,
+          :ca_path,
           arg,
           kind_of: String,
-          required: true
+          default: lazy { "#{ssl_dir}/CA" }
         )
       end
 
@@ -43,35 +43,9 @@ class Chef
         )
       end
 
-      alias_method :province, :state
-
-      def subject_alt_names(arg = nil)
-        set_or_return(
-          :subject_alt_names,
-          arg,
-          kind_of: Array
-        )
-      end
-
-      def private_key_filename(arg = nil)
-        set_or_return(
-          :private_key_file,
-          arg,
-          kind_of: String
-        )
-      end
-
-      def certificate_filename(arg = nil)
-        set_or_return(
-          :private_key_file,
-          arg,
-          kind_of: String
-        )
-      end
-
       def serial_filename(arg = nil)
         set_or_return(
-          :private_key_file,
+          :serial_filename,
           arg,
           kind_of: String
         )
@@ -87,35 +61,19 @@ class Chef
         )
       end
 
-      def save_in_vault?(arg = nil)
+      def save_in_vault(arg = nil)
         set_or_return(
-          :save_in_vault?,
+          :save_in_vault,
           arg,
-          kind_of: [TrueClass, FalseClass],
           equal_to: [true, false],
           default: true
         )
       end
 
-      def ca_cert_path
-        return "#{ca_path}/certs/cacert.pem" unless certificate_filename
-        "#{ca_path}/certs/#{certificate_filename}"
-      end
-
-      def private_key_path
-        return "#{ca_path}/private/cakey.pem" unless private_key_filename
-        "#{ca_path}/private/#{private_key_filename}"
-      end
-
-      def ca_serial_path
-        return "#{ca_path}/serial" unless serial_filename
-        "#{ca_path}/#{serial_filename}"
-      end
-
-      def ca_csr_path
-        "#{ca_path}/csr/ca_csr.pem"
-      end
-
+      alias_method :ca_cert_path, :certificate_filename
+      alias_method :private_key_path, :private_key_filename
+      alias_method :ca_serial_path, :serial_filename
+      alias_method :ca_csr_path, :request_filename
       alias_method :type, :authority_type
 
       private

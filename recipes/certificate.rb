@@ -24,8 +24,11 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-sslcerts_certificate node['fqdn'] do
+ssl_certificate node['fqdn'] do
   action :create
   ssl_dir node['sslcerts']['dir']
-  request_subject node['sslcerts']['request']['subject']
+  organization node['sslcerts']['request']['subject']['org']
+  country node['sslcerts']['request']['subject']['country']
+  state node['sslcerts']['request']['subject']['state']
+  common_name node['fqdn']
 end

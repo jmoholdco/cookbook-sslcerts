@@ -111,6 +111,13 @@ RSpec.describe 'test::lwrp_certificate' do
               'certificates',
               '151b43d38accf64fa2ed75d267cce8c75cfc07ae86064c4ca6e33354e2a9d99a'
             ).and_return(Hashie::Mash.new(item))
+            allow(File).to receive(:exist?).and_call_original
+            allow(File).to receive(:exist?)
+              .with('/etc/pki/tls/certs/fauxhai.local.pem')
+              .and_return(false)
+            allow(File).to receive(:exist?)
+              .with('/etc/ssl/certs/fauxhai.local.pem')
+              .and_return(false)
           end
 
           it_behaves_like 'the lwrp'

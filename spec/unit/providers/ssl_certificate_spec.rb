@@ -51,8 +51,8 @@ RSpec.describe Chef::Provider::SslCertificate do
     allow(run_context).to receive(:definitions)
     allow(node).to receive(:[]).with('fqdn').and_return 'fauxhai.local'
     allow(node).to receive(:key?).with(:platform_family).and_return true
-    allow(node).to receive(:platform_family).and_return 'centos'
-    allow(node).to receive(:[]).with(:platform_family).and_return 'centos'
+    allow(node).to receive(:platform_family).and_return 'rhel'
+    allow(node).to receive(:[]).with(:platform_family).and_return 'rhel'
   end
 
   let(:node) { double('Chef::Node') }

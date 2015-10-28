@@ -57,18 +57,20 @@ class Chef
       def generate_request
         private_key = generated_private_key.private_key
         csr = generated_csr
+        file_group = resource_group
+        file_owner = current_resource.owner
 
         file current_resource.private_key_filename do
-          owner 'root'
-          group node['root_group']
+          owner file_owner
+          group file_group
           mode '0400'
           sensitive true
           content private_key.to_pem
         end
 
         file current_resource.request_filename do
-          owner 'root'
-          group node['root_group']
+          owner file_owner
+          group file_group
           mode '0644'
           sensitive true
           content csr.to_pem
@@ -83,9 +85,11 @@ class Chef
 
       def create_signed_cert # rubocop:disable Metrics/AbcSize
         certbag = load_certbag
+        file_owner = current_resource.owner
+        file_group = resource_group
         file current_resource.certificate_filename do
-          owner 'root'
-          group node['root_group']
+          owner file_owner
+          group file_group
           mode '0644'
           sensitive true
           content certbag['certificate']
@@ -121,11 +125,11 @@ class Chef
         end
       end
 
-      alias_method :ssl_dir, :ssl_dir_for_platform
-
-      # def outbox_match?
-      #   node['csr_outbox'][new_resource.cert_id] ==
-      # end
+      def ssl_dir
+        return new_resource.ssl_dir if new_resource.ssl_dir
+        return current_resource.ssl_dir if current_resource.ssl_dir
+        ssl_dir_for_platform
+      end
     end
   end
 end

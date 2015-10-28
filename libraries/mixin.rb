@@ -137,6 +137,24 @@ module SSLCertsCookbook
           kind_of: String
         )
       end
+
+      def owner(arg = nil)
+        set_or_return(
+          :owner,
+          arg,
+          kind_of: String,
+          default: 'root'
+        )
+      end
+
+      def group(arg = nil)
+        set_or_return(
+          :owner,
+          arg,
+          kind_of: [String, NilClass],
+          default: nil
+        )
+      end
     end
 
     module Provider
@@ -159,6 +177,10 @@ module SSLCertsCookbook
         current_resource.certificate_filename lazy_filename_for(:certificate)
         current_resource.cert_id create_cert_id(lazy_filename_for(:cert_id))
         current_resource.ssl_dir(new_resource.ssl_dir || ssl_dir_for_platform)
+      end
+
+      def resource_group
+        current_resource.group || node['root_group']
       end
 
       def create_cert_id(cert_id)
@@ -230,6 +252,7 @@ module SSLCertsCookbook
       end
 
       def ssl_dir_for_platform
+        return current_resource.ssl_dir if current_resource.ssl_dir
         value_for_platform_family(
           'rhel' => '/etc/pki/tls',
           'fedora' => '/etc/pki/tls',

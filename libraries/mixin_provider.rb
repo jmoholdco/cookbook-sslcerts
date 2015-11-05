@@ -18,11 +18,11 @@ module SSLCertsCookbook
         end
       end
 
-      def shared_current_resource_loading # rubocop:disable Metrics/AbcSize
+      def shared_current_resource_loading
         current_resource.private_key_filename lazy_filename_for(:private_key)
         current_resource.request_filename lazy_filename_for(:request)
         current_resource.certificate_filename lazy_filename_for(:certificate)
-        current_resource.cert_id create_cert_id(lazy_filename_for(:cert_id))
+        # current_resource.cert_id create_cert_id(lazy_filename_for(:cert_id))
         current_resource.ssl_dir(new_resource.ssl_dir || ssl_dir_for_platform)
       end
 

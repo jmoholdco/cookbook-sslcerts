@@ -116,9 +116,9 @@ RSpec.describe Chef::Provider::SslCertificate do
 
         it 'tries to load the files' do
           expect(EaSSL::Key).to have_received(:load)
-            .with(provider.new_resource.private_key_filename)
+            .with(provider.current_resource.private_key_filename)
           expect(EaSSL::SigningRequest).to have_received(:load)
-            .with(provider.new_resource.request_filename)
+            .with(provider.current_resource.request_filename)
         end
       end
     end

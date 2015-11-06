@@ -24,6 +24,7 @@ RSpec.describe 'test::lwrp_certificate_authority_intermediate' do
       expect(chef_run).to create_directory('/etc/ssl_test/ca')
       expect(chef_run).to create_directory('/etc/ssl_test/ca/certs')
       expect(chef_run).to create_directory('/etc/ssl_test/ca/private')
+      expect(chef_run).to create_directory('/etc/ssl_test/ca/csr')
     end
 
     it 'creates the key file' do
@@ -36,6 +37,19 @@ RSpec.describe 'test::lwrp_certificate_authority_intermediate' do
 
     it 'creates the serial file' do
       expect(chef_run).to create_file('/etc/ssl_test/ca/serial')
+    end
+  end
+
+  describe 'the custom matcher' do
+    it 'works with no `with` clause' do
+      expect(chef_run).to create_ca_certificate('Test CA')
+    end
+
+    it 'works with a `with` clause' do
+      expect(chef_run).to create_ca_certificate('Test CA').with(
+        ca_path: '/etc/ssl_test/ca',
+        key_password: 'abcdefg123456'
+      )
     end
   end
 end

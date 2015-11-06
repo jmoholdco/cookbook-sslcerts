@@ -1,32 +1,20 @@
 require 'lib_spec_helper'
 require './libraries/resource_ca_certificate'
 require './libraries/provider_ca_certificate'
+require 'support/dummy_node'
 
 RSpec.describe Chef::Resource::CaCertificate do
-  %w(centos debian redhat ubuntu).each do |platform|
-    let(:dummy_node) do
-      OpenStruct.new.tap do |node|
-        node.platform = platform
-        node.fqdn = 'fauxhai.local'
-        node.platform_family = rhel?(platform) ? 'rhel' : 'debian'
-        node.ssl_dir = rhel?(platform) ? '/etc/pki/tls' : '/etc/ssl'
-        node.set = node
-      end
-    end
-
+  %w(rhel debian).each do |platform|
     context "on #{platform}" do
-      before do
-        allow_any_instance_of(Chef::Resource::CaCertificate)
-          .to receive(:node).and_return(dummy_node)
-      end
+      dummy_node(platform_family: platform, fqdn: 'fauxhai.local')
 
-      let(:resource) { described_class.new('totally_fake') }
-      let(:ssl_dir) { dummy_node[:ssl_dir] + '/CA' }
+      let(:resource) { described_class.new('totally_fake', run_context) }
       let(:expected_cert_id) do
         OpenSSL::Digest::SHA256.new.update(resource.name).to_s
       end
 
       it_behaves_like 'an sslcerts custom resource'
+
       it 'has a name' do
         expect(resource.name).to eq 'totally_fake'
       end

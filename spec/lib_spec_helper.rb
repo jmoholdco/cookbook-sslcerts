@@ -1,3 +1,5 @@
+$LOAD_PATH.unshift(File.expand_path('../../libraries', __FILE__))
+
 require 'rspec'
 require 'simplecov'
 require_relative 'unit/resources/shared_examples'
@@ -6,8 +8,8 @@ SimpleCov.start do
   add_filter '/spec/'
 end
 
-require './libraries/helpers'
-require './libraries/mixin'
+require 'helpers'
+require 'mixin'
 
 RSpec.configure do |config|
   config.expect_with :rspec do |expectations|
@@ -28,4 +30,11 @@ end
 
 def rhel?(platform)
   %w(centos redhat).include? platform
+end
+
+def load_resources_and_providers
+  require 'resource_ca_certificate'
+  require 'provider_ca_certificate'
+  require 'resource_ssl_certificate'
+  require 'provider_ssl_certificate'
 end

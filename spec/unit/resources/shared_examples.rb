@@ -60,4 +60,10 @@ RSpec.shared_examples 'an sslcerts custom resource' do
     expect { resource.subject_alt_names h: :y }.to raise_error(ArgumentError)
     expect { resource.subject_alt_names %w(fauxhai) }.to_not raise_error
   end
+
+  it 'has a cert_id' do
+    expect(resource.cert_id).to_not be_nil
+    expect(resource.cert_id).to match(/^[a-zA-Z0-9]{64}$/)
+    expect(resource.cert_id).to eq expected_cert_id
+  end
 end

@@ -24,14 +24,23 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-
 require 'spec_helper'
+
+RSpec.shared_examples_for 'the certificate recipe' do
+  let(:name) { chef_run.node.fqdn }
+  it 'creates the ssl certificate' do
+    expect(chef_run).to create_ssl_certificate(name).with(
+      common_name: name
+    )
+  end
+end
 
 RSpec.describe 'sslcerts::certificate' do
   let(:chef_run) { ChefSpec::SoloRunner.new(opts).converge(described_recipe) }
   context 'When all attributes are default, on an unspecified platform' do
     let(:opts) { {} }
     include_examples 'converges successfully'
+    it_behaves_like 'the certificate recipe'
   end
   supported_platforms = {
     'ubuntu' => %w(14.04 15.10),
@@ -44,6 +53,7 @@ RSpec.describe 'sslcerts::certificate' do
       context "on #{platform} v#{version}" do
         let(:opts) { { platform: platform, version: version } }
         include_examples 'converges successfully'
+        it_behaves_like 'the certificate recipe'
       end
     end
   end

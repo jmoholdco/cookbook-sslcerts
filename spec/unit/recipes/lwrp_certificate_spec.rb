@@ -1,6 +1,8 @@
 require 'spec_helper'
+require './libraries/helpers'
 require 'json'
 require 'hashie/mash'
+require 'support/recipe_mocks'
 
 RSpec.shared_examples 'the lwrp' do
   let(:ssldir) do
@@ -25,6 +27,22 @@ RSpec.shared_examples 'the lwrp' do
     expect(chef_run).to create_directory("#{ssldir}/private")
     expect(chef_run).to create_directory("#{ssldir}/certs")
     expect(chef_run).to create_directory("#{ssldir}/csr")
+    expect(chef_run).to create_directory('/var/chef/cache/csr_outbox')
+  end
+
+  describe 'the custom matcher' do
+    it 'works without a `with` clause' do
+      expect(chef_run).to create_ssl_certificate('localhost.localdomain')
+    end
+
+    it 'works with a `with` clause' do
+      expect(chef_run).to create_ssl_certificate('localhost.localdomain').with(
+        organization: 'TestingOrg',
+        country: 'US',
+        state: 'Colorado',
+        city: 'Denver'
+      )
+    end
   end
 end
 
@@ -94,29 +112,39 @@ RSpec.describe 'test::lwrp_certificate' do
         end
 
         context 'when the request has been generated and signed' do
+          let(:res) do
+            OpenStruct.new.tap do |resource|
+              resource.cert_id =
+                '151b43d38accf64fa2ed75d267cce8c75cfc07ae86064c4ca6e33354e2a9d99a' # rubocop:disable Metrics/LineLength
+            end
+          end
+          let(:dummy_outbox) { generate_outbox('localhost.localdomain') }
+          let(:dummy_signed) { sign_certificate(dummy_outbox) }
           let(:chef_run) do
             ChefSpec::SoloRunner.new(opts) do |node|
               node.automatic['fqdn'] = 'localhost.localdomain'
-              node.set['csr_outbox'] = JSON.parse(
-                File.read(File.expand_path('test/fixtures/outbox.json'))
-              )
+              node.set['csr_outbox'] = dummy_outbox.to_h
             end.converge(described_recipe)
           end
 
           before do
-            item = JSON.parse(
-              File.read(File.expand_path('test/fixtures/signed.json'))
-            )
             stub_data_bag_item(
               'certificates',
               '151b43d38accf64fa2ed75d267cce8c75cfc07ae86064c4ca6e33354e2a9d99a'
-            ).and_return(Hashie::Mash.new(item))
+            ).and_return(dummy_signed.data_bag_item.to_h)
+            allow(File).to receive(:read).and_call_original
+            allow(File).to receive(:read)
+              .with('/etc/pki/tls/private/localhost.localdomain.pem')
+              .and_return(dummy_outbox.key.private_key.to_pem)
+            allow(File).to receive(:read)
+              .with('/etc/ssl/private/localhost.localdomain.pem')
+              .and_return(dummy_outbox.key.private_key.to_pem)
             allow(File).to receive(:exist?).and_call_original
             allow(File).to receive(:exist?)
-              .with('/etc/pki/tls/certs/fauxhai.local.pem')
+              .with('/etc/pki/tls/certs/localhost.localdomain.pem')
               .and_return(false)
             allow(File).to receive(:exist?)
-              .with('/etc/ssl/certs/fauxhai.local.pem')
+              .with('/etc/ssl/certs/localhost.localdomain.pem')
               .and_return(false)
           end
 

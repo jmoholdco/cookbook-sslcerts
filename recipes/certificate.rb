@@ -26,7 +26,6 @@
 
 ssl_certificate node['fqdn'] do
   action :create
-  ssl_dir node['sslcerts']['dir']
   organization node['sslcerts']['request']['subject']['org']
   country node['sslcerts']['request']['subject']['country']
   state node['sslcerts']['request']['subject']['state']

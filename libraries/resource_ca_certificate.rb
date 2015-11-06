@@ -1,4 +1,5 @@
 require 'chef/resource'
+require 'digest/sha2'
 
 class Chef
   class Resource
@@ -6,6 +7,7 @@ class Chef
       include SSLCertsCookbook::Mixin::Resource
 
       def initialize(name, run_context = nil)
+        @ca_path ||= default_ca_path_for_platform
         super
         @resource_name = :ca_certificate
         @action = :create
@@ -42,11 +44,14 @@ class Chef
         )
       end
 
+      alias_method :full_certname, :ca_name
+
       def serial_filename(arg = nil)
         set_or_return(
           :serial_filename,
           arg,
-          kind_of: String
+          kind_of: String,
+          default: lazy { lazy_filename_for(:serial) }
         )
       end
 
@@ -79,6 +84,26 @@ class Chef
 
       def default_common_name
         name
+      end
+
+      def lazy_filename_for(file_type)
+        case file_type
+        when :request then "#{ca_path}/csr/ca_csr.pem"
+        when :private_key then "#{ca_path}/private/cakey.pem"
+        when :certificate then "#{ca_path}/certs/cacert.pem"
+        when :serial then "#{ca_path}/serial"
+        end
+      end
+
+      def default_ca_path_for_platform
+        case safe_node_attr('platform_family')
+        when 'rhel', 'fedora' then '/etc/pki/CA'
+        else '/etc/ssl/CA'
+        end
+      end
+
+      def generate_cert_id
+        Digest::SHA256.new.update(name).to_s
       end
     end
   end

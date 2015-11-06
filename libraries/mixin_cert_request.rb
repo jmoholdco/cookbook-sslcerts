@@ -1,10 +1,44 @@
 module SSLCertsCookbook
   module Mixin
     module CertRequest
+      module Provider
+        def load_current_resource_request
+          do_current_resource_request
+          do_current_resource_locale
+          current_resource.common_name new_resource.common_name
+        end
+
+        private
+
+        def do_current_resource_pem_content
+          return unless private_key_exists?
+          current_resource.private_key_pem =
+            EaSSL::Key.load(new_resource.private_key_filename)
+        end
+
+        def do_current_resource_request
+          current_resource.organization new_resource.organization
+          current_resource.organizational_unit new_resource.organizational_unit
+          current_resource.subject_alt_names new_resource.subject_alt_names
+        end
+
+        def do_current_resource_locale
+          current_resource.country new_resource.country
+          current_resource.city new_resource.city
+          current_resource.state new_resource.state
+        end
+      end
+
       def self.included(base)
         base.class_eval do
           alias_method :province, :state
+          attr_accessor :request_generator, :private_key_pem
         end
+      end
+
+      def initialize(name, run_context = nil)
+        super
+        @common_name = default_common_name
       end
 
       def organization(arg = nil)
@@ -54,8 +88,7 @@ module SSLCertsCookbook
         set_or_return(
           :common_name,
           arg,
-          kind_of: String,
-          default: lazy { default_common_name }
+          kind_of: String
         )
       end
 

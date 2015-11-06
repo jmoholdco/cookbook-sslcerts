@@ -6,12 +6,20 @@ module SSLCertsCookbook
     module Resource
       include Chef::Mixin::Securable
       include SSLCertsCookbook::Mixin::CertRequest
+
+      def initialize(name, run_context = nil)
+        super
+        @name = name
+        @ssl_dir = _ssl_dir_for_platform
+      end
+
       def cert_id(arg = nil)
         set_or_return(
           :cert_id,
           arg,
           kind_of: String,
-          regex: /[a-f0-9]{64}/
+          regex: /[a-f0-9]{64}/,
+          default: lazy { generate_cert_id }
         )
       end
 
@@ -55,7 +63,8 @@ module SSLCertsCookbook
         set_or_return(
           :request_filename,
           arg,
-          kind_of: String
+          kind_of: String,
+          default: lazy { lazy_filename_for(:request) }
         )
       end
 
@@ -63,7 +72,8 @@ module SSLCertsCookbook
         set_or_return(
           :private_key_filename,
           arg,
-          kind_of: String
+          kind_of: String,
+          default: lazy { lazy_filename_for(:private_key) }
         )
       end
 
@@ -71,8 +81,23 @@ module SSLCertsCookbook
         set_or_return(
           :certificate_filename,
           arg,
-          kind_of: String
+          kind_of: String,
+          default: lazy { lazy_filename_for(:certificate) }
         )
+      end
+
+      private
+
+      def safe_node_attr(attribute_to_get = nil)
+        return unless run_context
+        run_context.node[attribute_to_get]
+      end
+
+      def _ssl_dir_for_platform
+        case safe_node_attr('platform_family')
+        when 'rhel', 'fedora' then '/etc/pki/tls'
+        else '/etc/ssl'
+        end
       end
     end
   end

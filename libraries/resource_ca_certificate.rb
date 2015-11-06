@@ -103,7 +103,7 @@ class Chef
       end
 
       def generate_cert_id
-        Digest::SHA256.new.update(name).to_s
+        Digest::SHA256.new.update(ca_name).to_s
       end
     end
   end

@@ -4,7 +4,7 @@ maintainer_email 'j.morgan.lieberthal@gmail.com'
 license 'mit'
 description 'Installs/Configures trusted ssl certs on nodes'
 long_description 'Installs/Configures ssl_certs'
-version '1.0.1'
+version '1.0.2'
 
 depends 'chef-vault', '~> 1.3.1'
 depends 'chef-sugar', '~> 3.1'

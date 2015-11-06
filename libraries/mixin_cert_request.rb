@@ -16,10 +16,11 @@ module SSLCertsCookbook
             EaSSL::Key.load(new_resource.private_key_filename)
         end
 
-        def do_current_resource_request
+        def do_current_resource_request # rubocop:disable Metrics/AbcSize
           current_resource.organization new_resource.organization
           current_resource.organizational_unit new_resource.organizational_unit
           current_resource.subject_alt_names new_resource.subject_alt_names
+          current_resource.key_password new_resource.key_password
         end
 
         def do_current_resource_locale

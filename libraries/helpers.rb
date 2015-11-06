@@ -70,5 +70,23 @@ module SSLCertsCookbook
     def csr_exists?
       ::File.exist?(new_resource.request_filename)
     end
+
+    def ensure_vault_exists
+      data_bag(:cacerts)
+    rescue
+      create_ca_certbag
+    end
+
+    def create_ca_certbag
+      ruby_block 'create-data_bag-cacerts' do
+        block do
+          Chef::DataBag.validate_name!(:cacerts)
+          databag = Chef::DataBag.new
+          databag.name(:cacerts)
+          databag.save
+        end
+        action :create
+      end
+    end
   end
 end

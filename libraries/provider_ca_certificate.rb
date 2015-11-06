@@ -16,6 +16,7 @@ class Chef
         )
         @current_resource.ca_path new_resource.ca_path
         current_resource_request_generator
+        current_resource.save_in_vault new_resource.save_in_vault
         @on_disk = true if ca_exists?
         @in_vault = true if ca_in_vault?
         @request_generator = current_resource.request_generator
@@ -63,6 +64,7 @@ class Chef
           sensitive true
           content pem_content
         end
+        do_save_in_vault(pem_content) if defined?(chef_vault_secret)
       end
 
       def do_create_directory_structure
@@ -79,6 +81,32 @@ class Chef
             recursive true
           end
         end
+      end
+
+      def do_save_in_vault(pem_content)
+        return unless current_resource.save_in_vault || !in_vault
+        ensure_vault_exists
+        fqdn, data = ca_raw_data_for_vault(pem_content)
+        chef_vault_secret current_resource.ca_name do
+          admins 'morgan'
+          data_bag 'cacerts'
+          search "fqdn:#{fqdn}"
+          raw_data data
+          action :create_if_missing
+        end
+      end
+
+      def ca_raw_data_for_vault(pem_content)
+        [
+          node['fqdn'],
+          {
+            id: current_resource.ca_name,
+            certificate: pem_content,
+            password: current_resource.key_password,
+            private_key: current_resource.request_generator.private_key_pem,
+            serial: current_resource.request_generator.serial.export
+          }
+        ]
       end
     end
   end

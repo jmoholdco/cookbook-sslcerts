@@ -29,5 +29,7 @@ ssl_certificate node['fqdn'] do
   organization node['sslcerts']['request']['subject']['org']
   country node['sslcerts']['request']['subject']['country']
   state node['sslcerts']['request']['subject']['state']
+  city node['sslcerts']['request']['subject']['city']
+  subject_alt_names node['sslcerts']['request']['subject']['alt_names']
   common_name node['fqdn']
 end

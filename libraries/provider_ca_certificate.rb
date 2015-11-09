@@ -88,7 +88,6 @@ class Chef
         ensure_vault_exists
         fqdn, data = ca_raw_data_for_vault(pem_content)
         chef_vault_secret current_resource.ca_name do
-          admins 'morgan'
           data_bag 'cacerts'
           search "fqdn:#{fqdn}"
           raw_data data
